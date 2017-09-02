@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import _thread as thread
 import threading
 import datetime
+from apscheduler.schedulers.blocking import BlockingScheduler
+
 
 
 def stream_handler(message):
@@ -29,19 +31,30 @@ def stream_handler(message):
         data.child("Beaches/Country/Israel/Tzok/Result").set(newValue)
         data.child("Beaches/Country/Israel/Tzok/Current People").set(int(newBeachCountValueByGps))
 
+def TimeSeriesAlogrithm():
+    storage = firebase.storage()
+    beachList
+
+
 config = {
   "apiKey": "apiKey",
   "authDomain": "https://zeach-ab079.firebaseio.com/",
   "databaseURL": "https://zeach-ab079.firebaseio.com/",
-  "storageBucket": "gs://zeach-ab079.appspot.com/"
+  "storageBucket": "zeach-ab079.appspot.com"
 }
 
 firebase = pyrebase.initialize_app(config)
 data = firebase.database()
 mystream = data.child("BeachesListener/Country/Israel/Tzok/Current People").stream(stream_handler, stream_id="beach count")
+#storage = firebase.storage()
+#storage.child("Users/ofir.pdf").put("/Users/ofirmonis/Desktop/Flight confirmation.pdf",token=None)
+schech = BlockingScheduler();
 
-
-
+@schech.scheduled_job('cron', day_of_week='mon-sat', hour=21)
+def scheduled_job():
+    #print('This job is run every weekday at 5pm.')
+    TimeSeriesAlogrithm()
+schech.start()
 
 
 
