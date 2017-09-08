@@ -35,10 +35,11 @@ def stream_handler(message):
     paths = paths.split('/')
     if (paths.__len__() > 2):
         newCount = int(message['data'])
-        beachId = data.child("BeachesListener/Country/" + paths[1] + "/" + paths[2] + "/BeachID").get().val()
+      #  beachId = data.child("BeachesListener/Country/" + paths[1] + "/" + paths[2] + "/BeachID").get().val()
         beach = BeachListener(paths[1], newCount,paths[2])
+        beachId = data.child("BeachesListener/Country/" + beach.Country + "/" + beach.BeachListenerID + "/BeachID").get().val()
         beach.setBeachID(beachId)
-        beachId = data.child("BeachesListener/Country/" + beach.Country + "/" + beach.BeachID + "/BeachID").get().val()
+        #beachId = data.child("BeachesListener/Country/" + beach.Country + "/" + beach.BeachID + "/BeachID").get().val()
         beach.print()
         newBeachCountValueByGps = beach.CurrentCount;
         CurrentHour = datetime.datetime.now().hour;
