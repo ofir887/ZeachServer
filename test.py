@@ -51,9 +51,9 @@ def stream_handler(message):
             if (int(newBeachCountValueByGps) < int(predictedHourValue.val())):
                 newValue = (int(newBeachCountValueByGps)) + int(predictedHourValue.val());
                 newValue = newValue / 2 * 1.5
-        data.child("Beaches/Country/" + beach.Country + "/" + beach.BeachID + "/Result").set(newValue)
-        data.child("Beaches/Country/" + beach.Country + "/" + beach.BeachID + "/Current People").set(
-            int(newBeachCountValueByGps))
+        data.child("Beaches/Country/" + beach.Country + "/" + beach.BeachID + "/Result").set(int(round(newValue)))
+        data.child("Beaches/Country/" + beach.Country + "/" + beach.BeachID + "/CurrentPeople").set(
+            int(round(newBeachCountValueByGps)))
 
 
 def TimeSeriesAlogrithm():
