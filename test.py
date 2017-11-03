@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import datetime
 import Constants
+from AddBeachToDatabase import Hours
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 
@@ -83,11 +84,16 @@ def savePredictionToFile(aForecast, aBeachName):
     Excel.to_excel(aBeachName + Constants.xlsxFormat, sheet_name='sheet1', index=False);
     print("Files Saved !")
 
-def update24InDataBase(afireaseData):
-    #TODO
-    s = afireaseData.get()
 
-def TimeSeriesAlogrithm(aBeachFile, aBeachName):
+def update24InDataBase(aForecast,afirebaseData, aBeachId, aCountry):
+    # TODO
+    hours = Hours();
+    afirebaseData.child(Constants.Beaches).child(Constants.Country).child(aCountry).child(aBeachId).child(
+        Constants.Hours).set();
+    s = "f";
+
+
+def TimeSeriesAlogrithm(aBeachFile, aBeachName, aFirebaseData, aBeachId, aCountry):
     # storage = firebase.storage()
     BeachData = pd.read_csv(Constants.DownloadFilesPath + aBeachName + Constants.csvFormat)
     BeachData['y'] = np.log(BeachData['y'])
@@ -96,6 +102,7 @@ def TimeSeriesAlogrithm(aBeachFile, aBeachName):
     Predict = ProphetAlgorithm.make_future_dataframe(periods=24 * 1, freq='H')
     Forecast = ProphetAlgorithm.predict(Predict)
     print("Forecasting algorithm finished !")
+    update24InDataBase(aFirebaseData, aBeachId, aCountry)
     savePredictionToFile(Forecast, aBeachName)
 
 
@@ -121,11 +128,17 @@ for beach in beachesFiles.each():
     filePath = data.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child('filePath').get()
     filePath = filePath.val()
     print(filePath)
+    BeachId = data.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child(Constants.BeachID).get()
+    BeachId = BeachId.val();
+    print(BeachId)
+    Country = data.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child(Constants.Country).get()
+    Country = Country.val();
+    print(Country)
     storage = firebase.storage();
     beachFile = storage.child(filePath + "/" + beachName + Constants.csvFormat).download(
         Constants.DownloadFilesPath + beachName + Constants.csvFormat);
-    TimeSeriesAlogrithm(beachFile, beachName)
-    update24InDataBase(data)
+    TimeSeriesAlogrithm(beachFile, beachName, data, BeachId, Country)
+    update24InDataBase(data, BeachId, Country)
     uploadBeachFileToCloud(storage, filePath, beachName)
 
 
