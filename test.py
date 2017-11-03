@@ -5,26 +5,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import datetime
 import Constants
-from AddBeachToDatabase import Hours
+from Hours import Hours
+from BeachListener import BeachListener
 from apscheduler.schedulers.blocking import BlockingScheduler
 
-
-class BeachListener(object):
-    Country = ""
-    CurrentCount = 0
-    BeachID = ""
-    BeachListenerID = ""
-
-    def __init__(self, country, count, beachListenerId):
-        self.Country = country
-        self.CurrentCount = count
-        self.BeachListenerID = beachListenerId
-
-    def setBeachID(self, id):
-        self.BeachID = id
-
-    def print(self):
-        print(self.BeachID + " " + self.Country + " " + str(self.CurrentCount) + " " + self.BeachListenerID)
+global mFirebaseData
+global mBeachId
+global mCountry
 
 
 def BeachListenerHandler(message):
@@ -83,14 +70,28 @@ def savePredictionToFile(aForecast, aBeachName):
     Excel.to_csv(aBeachName + Constants.csvFormat);
     Excel.to_excel(aBeachName + Constants.xlsxFormat, sheet_name='sheet1', index=False);
     print("Files Saved !")
+    update24InDataBase(minHourValue, maxHourValue, predictedHourValue)
 
 
-def update24InDataBase(aForecast,afirebaseData, aBeachId, aCountry):
-    # TODO
+def update24InDataBase(minHourValue, maxHourValue, predictedHourValue):
+    len = predictedHourValue.__len__()
     hours = Hours();
-    afirebaseData.child(Constants.Beaches).child(Constants.Country).child(aCountry).child(aBeachId).child(
-        Constants.Hours).set();
-    s = "f";
+    minEstimationValue = []
+    maxEstimationValue = []
+    currentEstimationValue = []
+    for i in range(len - (24), len):
+        minEstimationValue.append(minHourValue['yhat_lower'][i])
+        maxEstimationValue.append(maxHourValue['yhat_upper'][i])
+        currentEstimationValue.append(predictedHourValue['yhat'][i])
+    # TODO delete one hour from initial excel
+    for i in range(0, 24):
+        mFirebaseData.child(Constants.Beaches).child(Constants.Country).child(mCountry).child(mBeachId).child(
+            Constants.Hours).child(i).child(Constants.MinEstimation).set(minEstimationValue[i])
+        mFirebaseData.child(Constants.Beaches).child(Constants.Country).child(mCountry).child(mBeachId).child(
+            Constants.Hours).child(i).child(Constants.CurrentEstimation).set(currentEstimationValue[i])
+        mFirebaseData.child(Constants.Beaches).child(Constants.Country).child(mCountry).child(mBeachId).child(
+            Constants.Hours).child(i).child(Constants.MaxEstimation).set(maxEstimationValue[i])
+    print("update 24 hours in cloud !")
 
 
 def TimeSeriesAlogrithm(aBeachFile, aBeachName, aFirebaseData, aBeachId, aCountry):
@@ -102,7 +103,6 @@ def TimeSeriesAlogrithm(aBeachFile, aBeachName, aFirebaseData, aBeachId, aCountr
     Predict = ProphetAlgorithm.make_future_dataframe(periods=24 * 1, freq='H')
     Forecast = ProphetAlgorithm.predict(Predict)
     print("Forecasting algorithm finished !")
-    update24InDataBase(aFirebaseData, aBeachId, aCountry)
     savePredictionToFile(Forecast, aBeachName)
 
 
@@ -114,32 +114,35 @@ config = {
 }
 
 firebase = pyrebase.initialize_app(config)
-data = firebase.database()
-BeachListenerStream = data.child(Constants.BeachesListener + "/" + Constants.Country).stream(BeachListenerHandler,
-                                                                                             stream_id="beach count")
-# storage = firebase.storage()
-# storage.child("Users/ofir.pdf").put("/Users/ofirmonis/Desktop/Flight confirmation.pdf",token=None)
+mFirebaseData = firebase.database()
+BeachListenerStream = mFirebaseData.child(Constants.BeachesListener + "/" + Constants.Country).stream(
+    BeachListenerHandler,
+    stream_id="beach count")
+
 schech = BlockingScheduler();
 
-beachesFiles = data.child(Constants.Files + Constants.BeachesFiles).get();
+beachesFiles = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).get();
 for beach in beachesFiles.each():
     beachName = beach.key();
     # print(beach.val())
-    filePath = data.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child('filePath').get()
+    filePath = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child('filePath').get()
     filePath = filePath.val()
     print(filePath)
-    BeachId = data.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child(Constants.BeachID).get()
-    BeachId = BeachId.val();
-    print(BeachId)
-    Country = data.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child(Constants.Country).get()
-    Country = Country.val();
-    print(Country)
+    mBeachId = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child(
+        Constants.BeachID).get()
+    mBeachId = mBeachId.val();
+    print(mBeachId)
+    mCountry = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child(
+        Constants.Country).get()
+    mCountry = mCountry.val();
+    print(mCountry)
     storage = firebase.storage();
-    beachFile = storage.child(filePath + "/" + beachName + Constants.csvFormat).download(
-        Constants.DownloadFilesPath + beachName + Constants.csvFormat);
-    TimeSeriesAlogrithm(beachFile, beachName, data, BeachId, Country)
-    update24InDataBase(data, BeachId, Country)
-    uploadBeachFileToCloud(storage, filePath, beachName)
+    if (beachName != "Ofir"):
+        beachFile = storage.child(filePath + "/" + beachName + Constants.csvFormat).download(
+            Constants.DownloadFilesPath + beachName + Constants.csvFormat);
+        TimeSeriesAlogrithm(beachFile, beachName, mFirebaseData, mBeachId, mCountry)
+        #  update24InDataBase(data, mBeachId, mCountry)
+        uploadBeachFileToCloud(storage, filePath, beachName)
 
 
 @schech.scheduled_job('cron', day_of_week='mon-sat', hour=15)
@@ -152,10 +155,22 @@ def scheduled_job():
         filePath = data.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child('filePath').get()
         filePath = filePath.val()
         print(filePath)
+        mBeachId = data.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child(
+            Constants.BeachID).get()
+        mBeachId = mBeachId.val();
+        print(mBeachId)
+        mCountry = data.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child(
+            Constants.Country).get()
+        mCountry = mCountry.val();
+        print(mCountry)
         storage = firebase.storage();
-        beachFile = storage.child(filePath).download(Constants.DownloadFilesPath + beachName);
-        TimeSeriesAlogrithm(beachFile, beachName)
-        uploadBeachFileToCloud(storage, filePath, beachName)
+        if (beachName != "Ofir"):
+            beachFile = storage.child(filePath + "/" + beachName + Constants.csvFormat).download(
+                Constants.DownloadFilesPath + beachName + Constants.csvFormat);
+            mFirebaseData = data
+            TimeSeriesAlogrithm(beachFile, beachName, data, mBeachId, mCountry)
+            #  update24InDataBase(data, mBeachId, mCountry)
+            uploadBeachFileToCloud(storage, filePath, beachName)
 
 
 schech.start()

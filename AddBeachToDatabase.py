@@ -1,75 +1,9 @@
 # from firebase import firebase
 import pyrebase
 import Constants
-
-
-class Hours(object):
-    Hour = [0] * 24;
-
-    def __init__(self):
-        self.Hour = [0] * 24;
-
-    def setHourPeople(self, index, sum):
-        self.Hour[index] = sum;
-
-    def dump(self):
-        i = 0;
-        lst2 = [];
-        while (i < len(self.Hour)):
-            lst2.append(self.Hour[i])
-            i = i + 1
-        return lst2;
-
-
-class Coords(object):
-    lat = 0.0
-    lng = 0.0
-
-    def __init__(self, lat, lng):
-        self.lat = lat
-        self.lng = lng
-
-    def dump(self):
-        return {'lat': self.lat, "lng": self.lng}
-
-    def print(self):
-        print('lat:', self.lat, ' lng:', self.lng)
-
-
-class Beach(object):
-    Country = ""
-    name = ""
-    Currentcount = 500
-    Result = 0;
-    PreviousHourCount = 0;
-    coords = []
-    Users = []
-    hours = Hours
-
-    def __init__(self, name, coords, country):
-        self.name = name
-        self.coords = coords
-        self.Country = country
-        self.Users = ""
-        self.hours = Hours()
-
-    def make_Beach(name, coords):
-        beach = Beach(name, coords)
-        return beach
-
-    def printBeach(self, beach):
-        print(beach.name, beach.coords)
-
-    def dump(self):
-        return {'BeachName': self.name, 'Coords': self.coords, 'CurrentPeople': self.Currentcount,
-                'PreviousHourPeople': self.PreviousHourCount, 'Peoplelist': self.Users, 'Result': self.Result,
-                'Hours': self.hours.dump()}
-
-    def getCountry(self):
-        return self.Country
-
-    def beachListenerDump(self, beachID):
-        return {'BeachName': self.name, 'CurrentPeople': self.Currentcount, "BeachID": beachID}
+from Hours import Hours
+from Coords import Coords
+from Beach import Beach
 
 
 # Set coords to fit data structure
@@ -77,7 +11,7 @@ def setCoordsAsDictionary(coords):
     newCoords = dict()
     i = 0;
     while (i < len(coords)):
-        string = 'latlng' + str(i + 1)
+        string = Constants.LatLng + str(i + 1)
         newCoords.update({string: coords[i].dump()})
         i = i + 1
     return newCoords
@@ -85,9 +19,9 @@ def setCoordsAsDictionary(coords):
 
 config = {
     "apiKey": "apiKey",
-    "authDomain": "https://zeach-ab079.firebaseio.com/",
-    "databaseURL": "https://zeach-ab079.firebaseio.com/",
-    "storageBucket": "zeach-ab079.appspot.com"
+    "authDomain": Constants.FireBaseUrl,
+    "databaseURL": Constants.FireBaseUrl,
+    "storageBucket": Constants.FirebaseStorage
 }
 
 firebase = pyrebase.initialize_app(config)
@@ -113,7 +47,7 @@ print(beachFormattedCoords)
 storage = firebase.storage()
 Country = "Israel";
 City = "Tel Aviv";
-BeachName = "Tzok";
+BeachName = "Tzok234";
 csvFileName = BeachName + ".csv";
 xlsxFileName = BeachName + ".xlsx";
 #
@@ -130,7 +64,7 @@ data.child("Beaches/Country/" + BeachCoords.getCountry() + "/" + BeachID['name']
     BeachListenerID['name'])
 data.child("Beaches/Country/" + BeachCoords.getCountry() + "/" + BeachID['name']).child("BeachID").set(BeachID['name'])
 
-#Add to storage
+# Add to storage
 storage.child(Constants.Beaches).child(Country).child(City).child(BeachName).child(csvFileName).put(
     "/Users/ofirmonis/PycharmProjects/firebaseStream/Ofir11.csv")
 storage.child(Constants.Beaches).child(Country).child(City).child(BeachName).child(xlsxFileName).put(
