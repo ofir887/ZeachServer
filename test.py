@@ -27,7 +27,7 @@ def BeachListenerHandler(message):
         beach.print()
         newBeachCountValueByGps = beach.CurrentCount;
         CurrentHour = datetime.datetime.now().hour;
-        strMixed = Constants.Beaches + "/" + Constants.Country + "/" + beach.Country + "/" + beach.BeachID + "/" + Constants.Hours + "/" + CurrentHour.__str__() + "/"+Constants.CurrentEstimation
+        strMixed = Constants.Beaches + "/" + Constants.Country + "/" + beach.Country + "/" + beach.BeachID + "/" + Constants.Hours + "/" + CurrentHour.__str__() + "/" + Constants.CurrentEstimation
         predictedHourValue = mFirebaseData.child(strMixed).get()
         print(strMixed)
         print(predictedHourValue.val())
