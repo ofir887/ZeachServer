@@ -22,3 +22,31 @@ class Hours(object):
                          Constants.MaxEstimation: self.MaxEstimation[i]})
             i = i + 1
         return lst2;
+
+
+class CurrentHourPrediction(object):
+    MinEstimation = 0.0;
+    CurrentEstimation = 0.0;
+    MaxEstimation = 0.0;
+
+    def __init__(self, aFirebaseData, aPath):
+        self.MinEstimation = aFirebaseData.child(aPath).child(Constants.MinEstimation).get();
+        self.MinEstimation = self.MinEstimation.val();
+        self.MaxEstimation = aFirebaseData.child(aPath).child(Constants.MaxEstimation).get();
+        self.MaxEstimation = self.MaxEstimation.val();
+        self.CurrentEstimation = aFirebaseData.child(aPath).child(Constants.CurrentEstimation).get();
+        self.CurrentEstimation = self.CurrentEstimation.val();
+
+    def getMinEstimation(self):
+        return self.MinEstimation;
+
+    def getMaxEstimation(self):
+        return self.MaxEstimation
+
+    def getCurrentEstimation(self):
+        return self.CurrentEstimation;
+
+    def print(self):
+        print("minEstimation: " + str(self.MinEstimation));
+        print("CurrentEstimation: " + str(self.CurrentEstimation));
+        print("maxEstimation: " + str(self.MaxEstimation));

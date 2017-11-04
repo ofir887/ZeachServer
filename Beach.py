@@ -5,7 +5,7 @@ import Constants
 class Beach(object):
     Country = ""
     name = ""
-    Currentcount = 500
+    CurrentDevices = 500
     Result = 0;
     coords = []
     Users = []
@@ -27,7 +27,7 @@ class Beach(object):
 
     def dump(self):
         return {Constants.BeachName: self.name, Constants.Coords: self.coords,
-                Constants.CurrentPeople: self.Currentcount,
+                Constants.CurrentDevices: self.CurrentDevices,
                 Constants.Peoplelist: self.Users, Constants.Result: self.Result,
                 'Hours': self.hours.dump()}
 
@@ -35,4 +35,4 @@ class Beach(object):
         return self.Country
 
     def beachListenerDump(self, beachID):
-        return {Constants.BeachName: self.name, Constants.CurrentPeople: self.Currentcount, Constants.BeachID: beachID}
+        return {Constants.BeachName: self.name, Constants.CurrentDevices: self.CurrentDevices, Constants.BeachID: beachID}

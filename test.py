@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import datetime
 import Constants
 from Hours import Hours
+from Hours import CurrentHourPrediction
 from BeachListener import BeachListener
 from apscheduler.schedulers.blocking import BlockingScheduler
 
@@ -14,36 +15,39 @@ global mBeachId
 global mCountry
 
 
+def calculateNewEstimation(aBeach, aPrediction, aCurrentDevicesOnBeach):
+    newResultValue = 0;
+    if (int(aCurrentDevicesOnBeach) > int(aPrediction.getCurrentEstimation())):
+        newResultValue = (int(aCurrentDevicesOnBeach)) * 1.05;
+    else:
+        if (int(aCurrentDevicesOnBeach) < int(aPrediction.getCurrentEstimation())):
+            newResultValue = (int(aCurrentDevicesOnBeach)) + int(aPrediction.getCurrentEstimation());
+            newResultValue = newResultValue / 2 * 1.5
+            resultPath = Constants.Beaches + "/" + Constants.Country + "/" + aBeach.Country + "/" + aBeach.BeachID + "/" + Constants.Result
+            mFirebaseData.child(resultPath).set(
+                int(round(newResultValue)))
+            currentDevicesPath = Constants.Beaches + "/" + Constants.Country + "/" + aBeach.Country + "/" + aBeach.BeachID + "/" + Constants.CurrentDevices
+            mFirebaseData.child(currentDevicesPath).set(int(round(aCurrentDevicesOnBeach)))
+    return newResultValue;
+
+
 def BeachListenerHandler(message):
     print(message)  # {'title': 'Pyrebase', "body": "etc..."}
     paths = str(message['path'])
     paths = paths.split('/')
     if (paths.__len__() > 2):
-        newCount = int(message['data'])
-        beach = BeachListener(paths[1], newCount, paths[2])
-        beachId = mFirebaseData.child(
-            Constants.BeachesListener + "/" + Constants.Country + "/" + beach.Country + "/" + beach.BeachListenerID + "/" + Constants.BeachID).get().val()
+        newDevicesCount = int(message['data'])
+        beach = BeachListener(paths[1], newDevicesCount, paths[2])
+        beachIdPath = Constants.BeachesListener + "/" + Constants.Country + "/" + beach.Country + "/" + beach.BeachListenerID + "/" + Constants.BeachID
+        beachId = mFirebaseData.child(beachIdPath).get().val()
         beach.setBeachID(beachId)
         beach.print()
-        newBeachCountValueByGps = beach.CurrentCount;
+        onBeachDevicesCountByGps = beach.CurrentDevicesCount;
         CurrentHour = datetime.datetime.now().hour;
-        strMixed = Constants.Beaches + "/" + Constants.Country + "/" + beach.Country + "/" + beach.BeachID + "/" + Constants.Hours + "/" + CurrentHour.__str__() + "/" + Constants.CurrentEstimation
-        predictedHourValue = mFirebaseData.child(strMixed).get()
-        print(strMixed)
-        print(predictedHourValue.val())
-        newValue = 0;
-        if (int(newBeachCountValueByGps) > int(predictedHourValue.val())):
-            newValue = (int(newBeachCountValueByGps)) * 1.05;
-        else:
-            if (int(newBeachCountValueByGps) < int(predictedHourValue.val())):
-                newValue = (int(newBeachCountValueByGps)) + int(predictedHourValue.val());
-                newValue = newValue / 2 * 1.5
-                mFirebaseData.child(
-                    Constants.Beaches + "/" + Constants.Country + "/" + beach.Country + "/" + beach.BeachID + "/" + Constants.Result).set(
-                    int(round(newValue)))
-                mFirebaseData.child(
-                    Constants.Beaches + "/" + Constants.Country + "/" + beach.Country + "/" + beach.BeachID + "/" + Constants.CurrentPeople).set(
-                    int(round(newBeachCountValueByGps)))
+        hourPath = Constants.Beaches + "/" + Constants.Country + "/" + beach.Country + "/" + beach.BeachID + "/" + Constants.Hours + "/" + CurrentHour.__str__()
+        prediction = CurrentHourPrediction(mFirebaseData, hourPath)
+        prediction.print();
+        calculateNewEstimation(beach, prediction, onBeachDevicesCountByGps)
 
 
 def uploadBeachFileToCloud(aFirebaseStorage, aFilePath, aBeachName):
