@@ -15,6 +15,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 global mFirebaseData
 global mBeachId
 global mCountry
+INTERVAL = 60;
 
 
 # TODO fix calculations & push new 24 hours values to csv file
@@ -169,7 +170,7 @@ schech = BlockingScheduler();
 
 while (True):
     ReadTimestamps()
-    time.sleep(15)
+    time.sleep(INTERVAL)
 
 
 # beachesFiles = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).get();
