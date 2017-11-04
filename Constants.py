@@ -9,6 +9,8 @@ BeachName = "BeachName"
 Coords = "Coords"
 Peoplelist = "Peoplelist"
 LatLng = "latlng"
+Users = "Users"
+CurrentBeach = "currentBeach"
 
 
 #Connection
@@ -27,3 +29,11 @@ MinEstimation='MinEstimation'
 CurrentEstimation='CurrentEstimation'
 MaxEstimation='MaxEstimation'
 
+#Timestamp
+Timestamps = 'Timestamps'
+Timestamp_BeachID = "mBeachID"
+Timestamp_BeachListenerId = "mBeachListenerId"
+Timestamp_BeachName = 'mBeachName'
+Timestamp_Timestamp ='mTimeStamp'
+Timestamp_Max_Hour = 3
+Timestamp_Country = 'country'

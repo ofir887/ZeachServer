@@ -40,14 +40,14 @@ beachCoords2.append(Coords(31.897635, 34.469299))
 beachCoords2.append(Coords(31.912346, 35.012269))
 beachFormattedCoords2 = setCoordsAsDictionary(beachCoords2)
 
-beachFormattedCoords = setCoordsAsDictionary(beachCoords)
+beachFormattedCoords = setCoordsAsDictionary(beachCoords2)
 print(beachFormattedCoords)
 
 #
 storage = firebase.storage()
 Country = "Israel";
 City = "Tel Aviv";
-BeachName = "Nir";
+BeachName = "Testing";
 csvFileName = BeachName + ".csv";
 xlsxFileName = BeachName + ".xlsx";
 #

@@ -8,6 +8,8 @@ import Constants
 from Hours import Hours
 from Hours import CurrentHourPrediction
 from BeachListener import BeachListener
+from Timestamp import Timestamp
+import time
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 global mFirebaseData
@@ -110,6 +112,45 @@ def TimeSeriesAlogrithm(aBeachName):
     savePredictionToFile(Forecast, aBeachName)
 
 
+def ReadTimestamps():
+    mTimestamp = Timestamp()
+    UsersTimestamps = mFirebaseData.child(Constants.Timestamps).get();
+    print("running")
+    if (UsersTimestamps.each() is not None):
+        for timestamp in UsersTimestamps.each():
+            userId = timestamp.key();
+            mTimestamp.setUserId(userId)
+            print(userId);
+            details = mFirebaseData.child(Constants.Timestamps).child(userId).get()
+            details = timestamp.val();
+            details = dict(details)
+            mTimestamp.setTimestamp(details.get(Constants.Timestamp_Timestamp))
+            mTimestamp.setBeachName(details.get(Constants.Timestamp_BeachName))
+            mTimestamp.setBeachId(details.get(Constants.Timestamp_BeachID))
+            mTimestamp.setBeachListenerId(details.get(Constants.Timestamp_BeachListenerId))
+            mTimestamp.setBeachCountry(details.get(Constants.Timestamp_Country))
+            mTimestamp.print()
+            checkInHour = datetime.datetime.utcfromtimestamp(int(mTimestamp.Timestamp)).hour
+            checkInMinutes = int(datetime.datetime.fromtimestamp(int(mTimestamp.Timestamp)).minute)
+            print(checkInMinutes)
+            print(checkInHour)
+            currentHour = datetime.datetime.utcnow().hour;
+            currentMinute = datetime.datetime.utcnow().minute;
+            print(currentHour)
+            print(currentMinute)
+            if ((checkInHour + Constants.Timestamp_Max_Hour) > currentHour):
+                mFirebaseData.child(Constants.Timestamps).child(mTimestamp.UserID).remove()
+                mFirebaseData.child(Constants.Beaches).child(Constants.Country).child(mTimestamp.Country).child(
+                    mTimestamp.BeachID).child(Constants.Peoplelist).child(mTimestamp.UserID).remove();
+                mFirebaseData.child(Constants.Users).child(mTimestamp.UserID).child(Constants.CurrentBeach).remove()
+                CurrentDevices = mFirebaseData.child(Constants.BeachesListener).child(Constants.Country).child(
+                    mTimestamp.Country).child(mTimestamp.BeachListenerID).child(Constants.CurrentDevices).get()
+                CurrentDevices = int(CurrentDevices.val());
+                CurrentDevices = CurrentDevices - 1;
+                mFirebaseData.child(Constants.BeachesListener).child(Constants.Country).child(mTimestamp.Country).child(
+                    mTimestamp.BeachListenerID).child(Constants.CurrentDevices).set(CurrentDevices)
+
+
 config = {
     "apiKey": "apiKey",
     "authDomain": Constants.FireBaseUrl,
@@ -124,29 +165,35 @@ BeachListenerStream = mFirebaseData.child(Constants.BeachesListener + "/" + Cons
     stream_id="beach count")
 
 schech = BlockingScheduler();
+# while (True):
 
-beachesFiles = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).get();
+while (True):
+    ReadTimestamps()
+    time.sleep(15)
 
-for beach in beachesFiles.each():
-    beachName = beach.key();
-    # print(beach.val())
-    filePath = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child('filePath').get()
-    filePath = filePath.val()
-    print(filePath)
-    mBeachId = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child(
-        Constants.BeachID).get()
-    mBeachId = mBeachId.val();
-    print(mBeachId)
-    mCountry = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child(
-        Constants.Country).get()
-    mCountry = mCountry.val();
-    print(mCountry)
-    storage = firebase.storage();
-    if (beachName == 'Nir'):
-        beachFile = storage.child(filePath + "/" + beachName + Constants.csvFormat).download(
-            Constants.DownloadFilesPath + beachName + Constants.csvFormat);
-        TimeSeriesAlogrithm(beachName)
-        uploadBeachFileToCloud(storage, filePath, beachName)
+
+# beachesFiles = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).get();
+#
+# for beach in beachesFiles.each():
+#     beachName = beach.key();
+#     # print(beach.val())
+#     filePath = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child('filePath').get()
+#     filePath = filePath.val()
+#     print(filePath)
+#     mBeachId = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child(
+#         Constants.BeachID).get()
+#     mBeachId = mBeachId.val();
+#     print(mBeachId)
+#     mCountry = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child(
+#         Constants.Country).get()
+#     mCountry = mCountry.val();
+#     print(mCountry)
+#     storage = firebase.storage();
+#     if (beachName == 'Nir'):
+#         beachFile = storage.child(filePath + "/" + beachName + Constants.csvFormat).download(
+#             Constants.DownloadFilesPath + beachName + Constants.csvFormat);
+#         TimeSeriesAlogrithm(beachName)
+#         uploadBeachFileToCloud(storage, filePath, beachName)
 
 
 @schech.scheduled_job('cron', day_of_week='mon-sat', hour=2)
