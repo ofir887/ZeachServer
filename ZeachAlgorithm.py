@@ -15,6 +15,7 @@ global mBeachId
 global mCountry
 
 
+# TODO fix calculations & push new 24 hours values to csv file
 def calculateNewEstimation(aBeach, aPrediction, aCurrentDevicesOnBeach):
     newResultValue = 0;
     if (int(aCurrentDevicesOnBeach) > int(aPrediction.getCurrentEstimation())):
@@ -74,10 +75,10 @@ def savePredictionToFile(aForecast, aBeachName):
     Excel.to_csv(aBeachName + Constants.csvFormat);
     Excel.to_excel(aBeachName + Constants.xlsxFormat, sheet_name='sheet1', index=False);
     print("Files Saved !")
-    update24InDataBase(minHourValue, maxHourValue, predictedHourValue)
+    update24HoursInDataBase(minHourValue, maxHourValue, predictedHourValue)
 
 
-def update24InDataBase(minHourValue, maxHourValue, predictedHourValue):
+def update24HoursInDataBase(minHourValue, maxHourValue, predictedHourValue):
     len = predictedHourValue.__len__()
     hours = Hours();
     minEstimationValue = []
@@ -98,8 +99,7 @@ def update24InDataBase(minHourValue, maxHourValue, predictedHourValue):
     print("update 24 hours in cloud !")
 
 
-def TimeSeriesAlogrithm(aBeachFile, aBeachName, aBeachId, aCountry):
-    # storage = firebase.storage()
+def TimeSeriesAlogrithm(aBeachName):
     BeachData = pd.read_csv(Constants.DownloadFilesPath + aBeachName + Constants.csvFormat)
     BeachData['y'] = np.log(BeachData['y'])
     ProphetAlgorithm = Prophet(daily_seasonality=True, yearly_seasonality=False, weekly_seasonality=False);
@@ -127,28 +127,26 @@ schech = BlockingScheduler();
 
 beachesFiles = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).get();
 
-
-# for beach in beachesFiles.each():
-#     beachName = beach.key();
-#     # print(beach.val())
-#     filePath = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child('filePath').get()
-#     filePath = filePath.val()
-#     print(filePath)
-#     mBeachId = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child(
-#         Constants.BeachID).get()
-#     mBeachId = mBeachId.val();
-#     print(mBeachId)
-#     mCountry = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child(
-#         Constants.Country).get()
-#     mCountry = mCountry.val();
-#     print(mCountry)
-#     storage = firebase.storage();
-#     if (beachName != "Ofir"):
-#         beachFile = storage.child(filePath + "/" + beachName + Constants.csvFormat).download(
-#             Constants.DownloadFilesPath + beachName + Constants.csvFormat);
-#         TimeSeriesAlogrithm(beachFile, beachName, mFirebaseData, mBeachId, mCountry)
-#         #  update24InDataBase(data, mBeachId, mCountry)
-#         uploadBeachFileToCloud(storage, filePath, beachName)
+for beach in beachesFiles.each():
+    beachName = beach.key();
+    # print(beach.val())
+    filePath = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child('filePath').get()
+    filePath = filePath.val()
+    print(filePath)
+    mBeachId = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child(
+        Constants.BeachID).get()
+    mBeachId = mBeachId.val();
+    print(mBeachId)
+    mCountry = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child(
+        Constants.Country).get()
+    mCountry = mCountry.val();
+    print(mCountry)
+    storage = firebase.storage();
+    if (beachName == 'Nir'):
+        beachFile = storage.child(filePath + "/" + beachName + Constants.csvFormat).download(
+            Constants.DownloadFilesPath + beachName + Constants.csvFormat);
+        TimeSeriesAlogrithm(beachName)
+        uploadBeachFileToCloud(storage, filePath, beachName)
 
 
 @schech.scheduled_job('cron', day_of_week='mon-sat', hour=2)
@@ -176,7 +174,6 @@ def scheduled_job(mFirebaseData=mFirebaseData):
                 Constants.DownloadFilesPath + beachName + Constants.csvFormat);
             mFirebaseData = mFirebaseData
             TimeSeriesAlogrithm(beachFile, beachName, mBeachId, mCountry)
-            #  update24InDataBase(data, mBeachId, mCountry)
             uploadBeachFileToCloud(storage, filePath, beachName)
 
 

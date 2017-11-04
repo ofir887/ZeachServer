@@ -47,7 +47,7 @@ print(beachFormattedCoords)
 storage = firebase.storage()
 Country = "Israel";
 City = "Tel Aviv";
-BeachName = "Tzok234";
+BeachName = "Nir";
 csvFileName = BeachName + ".csv";
 xlsxFileName = BeachName + ".xlsx";
 #
