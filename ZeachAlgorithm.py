@@ -11,6 +11,8 @@ from BeachListener import BeachListener
 from Timestamp import Timestamp
 import time
 from apscheduler.schedulers.blocking import BlockingScheduler
+import threading
+from multiprocessing import Process
 
 global mFirebaseData
 global mBeachId
@@ -151,6 +153,36 @@ def ReadTimestamps():
                 mFirebaseData.child(Constants.BeachesListener).child(Constants.Country).child(mTimestamp.Country).child(
                     mTimestamp.BeachListenerID).child(Constants.CurrentDevices).set(CurrentDevices)
 
+def runOnThread():
+    while (True):
+        ReadTimestamps()
+        time.sleep(INTERVAL)
+
+def readBeachesFromFirebase(mFirebaseData):
+    beachesFiles = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).get();
+    for beach in beachesFiles.each():
+        mBeachId = beach.key();
+        print(mBeachId)
+        beachName = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(mBeachId).child(
+            Constants.BeachName).get()
+        beachName = beachName.val();
+        filePath = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(mBeachId).child(
+            'filePath').get()
+        filePath = filePath.val()
+        print(filePath)
+        print(mBeachId)
+        mCountry = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(mBeachId).child(
+            Constants.Country).get()
+        mCountry = mCountry.val();
+        print(mCountry)
+        storage = firebase.storage();
+        if (beachName != "Ofir"):
+            beachFile = storage.child(filePath + "/" + beachName + Constants.csvFormat).download(
+                Constants.DownloadFilesPath + beachName + Constants.csvFormat);
+            mFirebaseData = mFirebaseData
+            TimeSeriesAlogrithm(beachName)
+            uploadBeachFileToCloud(storage, filePath, beachName)
+
 
 config = {
     "apiKey": "apiKey",
@@ -168,56 +200,45 @@ BeachListenerStream = mFirebaseData.child(Constants.BeachesListener + "/" + Cons
 schech = BlockingScheduler();
 # while (True):
 
-while (True):
-    ReadTimestamps()
-    time.sleep(INTERVAL)
+# while (True):
+#     ReadTimestamps()
+#     time.sleep(INTERVAL)
+thread = []
+#t = threading.Thread(target=runOnThread())
+#t2 = threading.Thread(target=readBeachesFromFirebase(mFirebaseData))
+p1 = Process(target=runOnThread())
+p1.start()
+p2 = Process(target=readBeachesFromFirebase(mFirebaseData))
+p2.start()
+#thread.append(t)
+# thread.append(t2)
+# #t.start()
+# t2.start()
+
 
 # beachesFiles = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).get();
-#
 # for beach in beachesFiles.each():
-#     beachName = beach.key();
-#     # print(beach.val())
-#     filePath = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child('filePath').get()
+#     mBeachId = beach.key();
+#     print(mBeachId)
+#     beachName = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(mBeachId).child(
+#         Constants.BeachName).get()
+#     beachName = beachName.val();
+#     filePath = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(mBeachId).child(
+#         'filePath').get()
 #     filePath = filePath.val()
 #     print(filePath)
-#     mBeachId = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child(
-#         Constants.BeachID).get()
-#     mBeachId = mBeachId.val();
 #     print(mBeachId)
-#     mCountry = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child(
+#     mCountry = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(mBeachId).child(
 #         Constants.Country).get()
 #     mCountry = mCountry.val();
 #     print(mCountry)
 #     storage = firebase.storage();
-#     if (beachName == 'Nir'):
+#     if (beachName != "Ofir"):
 #         beachFile = storage.child(filePath + "/" + beachName + Constants.csvFormat).download(
 #             Constants.DownloadFilesPath + beachName + Constants.csvFormat);
+#         mFirebaseData = mFirebaseData
 #         TimeSeriesAlogrithm(beachName)
 #         uploadBeachFileToCloud(storage, filePath, beachName)
-
-beachesFiles = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).get();
-for beach in beachesFiles.each():
-    mBeachId = beach.key();
-    print(mBeachId)
-    beachName = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(mBeachId).child(
-        Constants.BeachName).get()
-    beachName = beachName.val();
-    filePath = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(mBeachId).child(
-        'filePath').get()
-    filePath = filePath.val()
-    print(filePath)
-    print(mBeachId)
-    mCountry = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(mBeachId).child(
-        Constants.Country).get()
-    mCountry = mCountry.val();
-    print(mCountry)
-    storage = firebase.storage();
-    if (beachName != "Ofir"):
-        beachFile = storage.child(filePath + "/" + beachName + Constants.csvFormat).download(
-            Constants.DownloadFilesPath + beachName + Constants.csvFormat);
-        mFirebaseData = mFirebaseData
-        TimeSeriesAlogrithm(beachName)
-        uploadBeachFileToCloud(storage, filePath, beachName)
 
 
 @schech.scheduled_job('cron', day_of_week='mon-sat', hour=2)
