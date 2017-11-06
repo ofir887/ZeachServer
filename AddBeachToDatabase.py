@@ -52,11 +52,11 @@ csvFileName = BeachName + ".csv";
 xlsxFileName = BeachName + ".xlsx";
 #
 
-BeachCoords = Beach(BeachName, beachFormattedCoords, 'Israel');
+BeachCoords = Beach(BeachName, beachFormattedCoords, 'Israel', 1000);
 
 # BeachCoords.printBeach(BeachCoords)
 hours = Hours()
-BeachCoords.hours.setHourPeople(4, 500)
+# BeachCoords.hours.setHourPeople(4, 500)
 BeachID = data.child("Beaches/Country/" + BeachCoords.getCountry()).push(BeachCoords.dump())
 BeachListenerID = data.child("BeachesListener/Country/" + BeachCoords.getCountry()).push(
     BeachCoords.beachListenerDump(BeachID['name']))
@@ -69,11 +69,13 @@ storage.child(Constants.Beaches).child(Country).child(City).child(BeachName).chi
     "/Users/ofirmonis/PycharmProjects/firebaseStream/Ofir11.csv")
 storage.child(Constants.Beaches).child(Country).child(City).child(BeachName).child(xlsxFileName).put(
     "/Users/ofirmonis/PycharmProjects/firebaseStream/Ofir11.xlsx")
-data.child(Constants.Files).child(Constants.BeachesFiles).child(BeachName).child("filePath").set(
+data.child(Constants.Files).child(Constants.BeachesFiles).child(BeachID['name']).child("filePath").set(
     Constants.Beaches + "/" + Country + "/" + City + "/" + BeachName);
-data.child(Constants.Files).child(Constants.BeachesFiles).child(BeachName).child(Constants.BeachID).set(
+data.child(Constants.Files).child(Constants.BeachesFiles).child(BeachID['name']).child(Constants.BeachID).set(
     BeachID['name']);
-data.child(Constants.Files).child(Constants.BeachesFiles).child(BeachName).child(Constants.Country).set(
+data.child(Constants.Files).child(Constants.BeachesFiles).child(BeachID['name']).child(Constants.Country).set(
     Country);
+data.child(Constants.Files).child(Constants.BeachesFiles).child(BeachID['name']).child(Constants.BeachName).set(
+    BeachCoords.name);
 #
 print(BeachCoords.hours.dump())

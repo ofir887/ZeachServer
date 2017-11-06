@@ -172,7 +172,6 @@ while (True):
     ReadTimestamps()
     time.sleep(INTERVAL)
 
-
 # beachesFiles = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).get();
 #
 # for beach in beachesFiles.each():
@@ -196,23 +195,50 @@ while (True):
 #         TimeSeriesAlogrithm(beachName)
 #         uploadBeachFileToCloud(storage, filePath, beachName)
 
+beachesFiles = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).get();
+for beach in beachesFiles.each():
+    mBeachId = beach.key();
+    print(mBeachId)
+    beachName = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(mBeachId).child(
+        Constants.BeachName).get()
+    beachName = beachName.val();
+    filePath = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(mBeachId).child(
+        'filePath').get()
+    filePath = filePath.val()
+    print(filePath)
+    print(mBeachId)
+    mCountry = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(mBeachId).child(
+        Constants.Country).get()
+    mCountry = mCountry.val();
+    print(mCountry)
+    storage = firebase.storage();
+    if (beachName != "Ofir"):
+        beachFile = storage.child(filePath + "/" + beachName + Constants.csvFormat).download(
+            Constants.DownloadFilesPath + beachName + Constants.csvFormat);
+        mFirebaseData = mFirebaseData
+        TimeSeriesAlogrithm(beachName)
+        uploadBeachFileToCloud(storage, filePath, beachName)
+
 
 @schech.scheduled_job('cron', day_of_week='mon-sat', hour=2)
 def scheduled_job(mFirebaseData=mFirebaseData):
     # print('This job is run every weekday at 5pm.')
     beachesFiles = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).get();
     for beach in beachesFiles.each():
-        beachName = beach.key();
+        mBeachId = beach.key();
         # print(beach.val())
-        filePath = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child(
+        beachName = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(mBeachId).child(
+            Constants.BeachName).get()
+        beachName = beachName.val();
+        filePath = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(mBeachId).child(
             'filePath').get()
         filePath = filePath.val()
         print(filePath)
-        mBeachId = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child(
-            Constants.BeachID).get()
-        mBeachId = mBeachId.val();
+        # mBeachId = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child(
+        #     Constants.BeachID).get()
+        # mBeachId = mBeachId.val();
         print(mBeachId)
-        mCountry = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child(
+        mCountry = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(mBeachId).child(
             Constants.Country).get()
         mCountry = mCountry.val();
         print(mCountry)
