@@ -11,6 +11,7 @@ Peoplelist = "Peoplelist"
 LatLng = "latlng"
 Users = "Users"
 CurrentBeach = "currentBeach"
+Capacity = "Capacity"
 
 #Traffic
 Traffic = "Traffic"

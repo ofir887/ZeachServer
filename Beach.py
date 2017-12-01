@@ -37,6 +37,9 @@ class Beach(object):
     def getCountry(self):
         return self.Country
 
+    def getCapacity(self):
+        return self.Capacity
+
     def beachListenerDump(self, beachID):
         return {Constants.BeachName: self.name, Constants.CurrentDevices: self.CurrentDevices,
                 Constants.BeachID: beachID}

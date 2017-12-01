@@ -29,8 +29,18 @@ class Info(object):
 INTERVAL = 60;
 
 
+def setTrafficFlag(aBeachCapacity, aResult):
+    percentage = (aResult / aBeachCapacity) * 100;
+    if (percentage >= 80):
+        return Constants.HighTraffic
+    if (percentage >= 40 and percentage < 80):
+        return Constants.MediumTraffic
+    else:
+        return Constants.LowTraffic
+
+
 # TODO fix calculations & push new 24 hours values to csv file
-def calculateNewEstimation(aBeach, aPrediction, aCurrentDevicesOnBeach):
+def calculateNewEstimation(aBeach, aPrediction, aCurrentDevicesOnBeach, aBeachCapacity):
     newResultValue = 0;
     if (int(aCurrentDevicesOnBeach) > int(aPrediction.getCurrentEstimation())):
         newResultValue = (int(aCurrentDevicesOnBeach)) * 1.05;
@@ -43,6 +53,11 @@ def calculateNewEstimation(aBeach, aPrediction, aCurrentDevicesOnBeach):
                 int(round(newResultValue)))
             currentDevicesPath = Constants.Beaches + "/" + Constants.Country + "/" + aBeach.Country + "/" + aBeach.BeachID + "/" + Constants.CurrentDevices
             mFirebaseData.child(currentDevicesPath).set(int(round(aCurrentDevicesOnBeach)))
+    # set traffic flag
+    trafficFlag = setTrafficFlag(aBeachCapacity, newResultValue)
+    mFirebaseData.child(
+        Constants.Beaches + "/" + Constants.Country + "/" + aBeach.Country + "/" + aBeach.BeachID + "/" + Constants.Traffic).set(
+        trafficFlag)
     return newResultValue;
 
 
@@ -55,6 +70,8 @@ def BeachListenerHandler(message):
         beach = BeachListener(paths[1], newDevicesCount, paths[2])
         beachIdPath = Constants.BeachesListener + "/" + Constants.Country + "/" + beach.Country + "/" + beach.BeachListenerID + "/" + Constants.BeachID
         beachId = mFirebaseData.child(beachIdPath).get().val()
+        beachCapacity = mFirebaseData.child(Constants.Beaches).child(Constants.Country). \
+            child(beach.Country).child(beachId).child(Constants.Capacity).get().val()
         beach.setBeachID(beachId)
         beach.print()
         onBeachDevicesCountByGps = beach.CurrentDevicesCount;
@@ -62,7 +79,7 @@ def BeachListenerHandler(message):
         hourPath = Constants.Beaches + "/" + Constants.Country + "/" + beach.Country + "/" + beach.BeachID + "/" + Constants.Hours + "/" + CurrentHour.__str__()
         prediction = CurrentHourPrediction(mFirebaseData, hourPath)
         prediction.print();
-        calculateNewEstimation(beach, prediction, onBeachDevicesCountByGps)
+        calculateNewEstimation(beach, prediction, onBeachDevicesCountByGps, beachCapacity)
 
 
 def uploadBeachFileToCloud(aFirebaseStorage, aFilePath, aBeachName):
