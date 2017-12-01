@@ -12,6 +12,12 @@ LatLng = "latlng"
 Users = "Users"
 CurrentBeach = "currentBeach"
 
+#Traffic
+Traffic = "Traffic"
+LowTraffic = "Low"
+MediumTraffic = "Medium"
+HighTraffic = "High"
+
 
 #Connection
 FireBaseUrl = "https://zeach-ab079.firebaseio.com/"
