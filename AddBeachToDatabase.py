@@ -47,7 +47,7 @@ print(beachFormattedCoords)
 storage = firebase.storage()
 Country = "Israel";
 City = "Tel Aviv";
-BeachName = "Testing";
+BeachName = "Norni";
 csvFileName = BeachName + ".csv";
 xlsxFileName = BeachName + ".xlsx";
 #
@@ -57,12 +57,12 @@ BeachCoords = Beach(BeachName, beachFormattedCoords, 'Israel', 1000);
 # BeachCoords.printBeach(BeachCoords)
 hours = Hours()
 # BeachCoords.hours.setHourPeople(4, 500)
-BeachID = data.child("Beaches/Country/" + BeachCoords.getCountry()).push(BeachCoords.dump())
-BeachListenerID = data.child("BeachesListener/Country/" + BeachCoords.getCountry()).push(
+BeachID = data.child("Beaches").push(BeachCoords.dump())
+BeachListenerID = data.child("BeachesListener").push(
     BeachCoords.beachListenerDump(BeachID['name']))
-data.child("Beaches/Country/" + BeachCoords.getCountry() + "/" + BeachID['name']).child("BeachListenerID").set(
+data.child("Beaches" + "/" + BeachID['name']).child("BeachListenerID").set(
     BeachListenerID['name'])
-data.child("Beaches/Country/" + BeachCoords.getCountry() + "/" + BeachID['name']).child("BeachID").set(BeachID['name'])
+data.child("Beaches" + "/" + BeachID['name']).child("BeachID").set(BeachID['name'])
 
 # Add to storage
 storage.child(Constants.Beaches).child(Country).child(City).child(BeachName).child(csvFileName).put(

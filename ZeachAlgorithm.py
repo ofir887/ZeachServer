@@ -48,16 +48,18 @@ def calculateNewEstimation(aBeach, aPrediction, aCurrentDevicesOnBeach, aBeachCa
         if (int(aCurrentDevicesOnBeach) < int(aPrediction.getCurrentEstimation())):
             newResultValue = (int(aCurrentDevicesOnBeach)) + int(aPrediction.getCurrentEstimation());
             newResultValue = newResultValue / 2 * 1.5
-            resultPath = Constants.Beaches + "/" + Constants.Country + "/" + aBeach.Country + "/" + aBeach.BeachID + "/" + Constants.Result
-            mFirebaseData.child(resultPath).set(
-                int(round(newResultValue)))
-            currentDevicesPath = Constants.Beaches + "/" + Constants.Country + "/" + aBeach.Country + "/" + aBeach.BeachID + "/" + Constants.CurrentDevices
+            #resultPath = Constants.Beaches + "/" + aBeach.BeachID + "/" + Constants.Result
+            # mFirebaseData.child(resultPath).set(
+            #     int(round(newResultValue)))
+            currentDevicesPath = Constants.Beaches + "/" + aBeach.BeachID + "/" + Constants.CurrentDevices
             mFirebaseData.child(currentDevicesPath).set(int(round(aCurrentDevicesOnBeach)))
     # set traffic flag
+    resultPath = Constants.Beaches + "/" + aBeach.BeachID + "/" + Constants.Result
+    mFirebaseData.child(resultPath).set(
+        int(round(newResultValue)))
     trafficFlag = setTrafficFlag(aBeachCapacity, newResultValue)
     mFirebaseData.child(
-        Constants.Beaches + "/" + Constants.Country + "/" + aBeach.Country + "/" + aBeach.BeachID + "/" + Constants.Traffic).set(
-        trafficFlag)
+        Constants.Beaches + "/" + aBeach.BeachID + "/" + Constants.Traffic).set(trafficFlag)
     return newResultValue;
 
 
@@ -67,16 +69,15 @@ def BeachListenerHandler(message):
     paths = paths.split('/')
     if (paths.__len__() > 2):
         newDevicesCount = int(message['data'])
-        beach = BeachListener(paths[1], newDevicesCount, paths[2])
-        beachIdPath = Constants.BeachesListener + "/" + Constants.Country + "/" + beach.Country + "/" + beach.BeachListenerID + "/" + Constants.BeachID
+        beach = BeachListener(paths[0], newDevicesCount, paths[1])
+        beachIdPath = Constants.BeachesListener + "/" + beach.BeachListenerID + "/" + Constants.BeachID
         beachId = mFirebaseData.child(beachIdPath).get().val()
-        beachCapacity = mFirebaseData.child(Constants.Beaches).child(Constants.Country). \
-            child(beach.Country).child(beachId).child(Constants.Capacity).get().val()
+        beachCapacity = mFirebaseData.child(Constants.Beaches).child(beachId).child(Constants.Capacity).get().val()
         beach.setBeachID(beachId)
         beach.print()
         onBeachDevicesCountByGps = beach.CurrentDevicesCount;
         CurrentHour = datetime.datetime.now().hour;
-        hourPath = Constants.Beaches + "/" + Constants.Country + "/" + beach.Country + "/" + beach.BeachID + "/" + Constants.Hours + "/" + CurrentHour.__str__()
+        hourPath = Constants.Beaches + "/" + beach.BeachID + "/" + Constants.Hours + "/" + CurrentHour.__str__()
         prediction = CurrentHourPrediction(mFirebaseData, hourPath)
         prediction.print();
         calculateNewEstimation(beach, prediction, onBeachDevicesCountByGps, beachCapacity)
@@ -121,13 +122,13 @@ def update24HoursInDataBase(minHourValue, maxHourValue, predictedHourValue, beac
         currentEstimationValue.append(predictedHourValue['yhat'][i])
     # TODO delete one hour from initial excel
     for i in range(0, 24):
-        mFirebaseData.child(Constants.Beaches).child(Constants.Country).child(beachInfo.mCountry).child(
+        mFirebaseData.child(Constants.Beaches).child(
             beachInfo.mBeachId).child(
             Constants.Hours).child(i).child(Constants.MinEstimation).set(minEstimationValue[i])
-        mFirebaseData.child(Constants.Beaches).child(Constants.Country).child(beachInfo.mCountry).child(
+        mFirebaseData.child(Constants.Beaches).child(
             beachInfo.mBeachId).child(
             Constants.Hours).child(i).child(Constants.CurrentEstimation).set(currentEstimationValue[i])
-        mFirebaseData.child(Constants.Beaches).child(Constants.Country).child(beachInfo.mCountry).child(
+        mFirebaseData.child(Constants.Beaches).child(
             beachInfo.mBeachId).child(
             Constants.Hours).child(i).child(Constants.MaxEstimation).set(maxEstimationValue[i])
     print("update 24 hours in cloud !")
@@ -172,14 +173,14 @@ def ReadTimestamps():
             print(currentMinute)
             if ((checkInHour + Constants.Timestamp_Max_Hour) > currentHour):
                 mFirebaseData.child(Constants.Timestamps).child(mTimestamp.UserID).remove()
-                mFirebaseData.child(Constants.Beaches).child(Constants.Country).child(mTimestamp.Country).child(
+                mFirebaseData.child(Constants.Beaches).child(
                     mTimestamp.BeachID).child(Constants.Peoplelist).child(mTimestamp.UserID).remove();
                 mFirebaseData.child(Constants.Users).child(mTimestamp.UserID).child(Constants.CurrentBeach).remove()
-                CurrentDevices = mFirebaseData.child(Constants.BeachesListener).child(Constants.Country).child(
-                    mTimestamp.Country).child(mTimestamp.BeachListenerID).child(Constants.CurrentDevices).get()
+                CurrentDevices = mFirebaseData.child(Constants.BeachesListener).child(mTimestamp.BeachListenerID).child(
+                    Constants.CurrentDevices).get()
                 CurrentDevices = int(CurrentDevices.val());
                 CurrentDevices = CurrentDevices - 1;
-                mFirebaseData.child(Constants.BeachesListener).child(Constants.Country).child(mTimestamp.Country).child(
+                mFirebaseData.child(Constants.BeachesListener).child(
                     mTimestamp.BeachListenerID).child(Constants.CurrentDevices).set(CurrentDevices)
 
 
@@ -225,11 +226,11 @@ config = {
 
 firebase = pyrebase.initialize_app(config)
 mFirebaseData = firebase.database()
-BeachListenerStream = mFirebaseData.child(Constants.BeachesListener + "/" + Constants.Country).stream(
+BeachListenerStream = mFirebaseData.child(Constants.BeachesListener).stream(
     BeachListenerHandler,
     stream_id="beach count")
-readBeachesFromFirebase(mFirebaseData)
-schech = BlockingScheduler();
+#readBeachesFromFirebase(mFirebaseData)
+#schech = BlockingScheduler();
 
 
 # while (True):

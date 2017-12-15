@@ -32,7 +32,8 @@ class Beach(object):
         return {Constants.BeachName: self.name, Constants.Coords: self.coords,
                 Constants.CurrentDevices: self.CurrentDevices,
                 Constants.Result: self.Result,
-                'Hours': self.hours.dump(), 'Capacity': self.Capacity, Constants.Traffic: Constants.LowTraffic}
+                'Hours': self.hours.dump(), 'Capacity': self.Capacity, Constants.Traffic:
+                    Constants.LowTraffic, Constants.Country: self.Country}
 
     def getCountry(self):
         return self.Country
