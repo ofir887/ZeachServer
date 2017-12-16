@@ -84,9 +84,9 @@ def BeachListenerHandler(message):
 
 
 def uploadBeachFileToCloud(aFirebaseStorage, aFilePath, aBeachName):
-    aFirebaseStorage.child(aFilePath).put(
+    aFirebaseStorage.child(aFilePath + "/" + aBeachName + Constants.csvFormat).put(
         Constants.DownloadFilesPath + aBeachName + Constants.csvFormat);
-    aFirebaseStorage.child(aFilePath).put(
+    aFirebaseStorage.child(aFilePath + "/" + aBeachName + Constants.xlsxFormat).put(
         Constants.DownloadFilesPath + aBeachName + Constants.xlsxFormat);
     print("Updated Files !")
 
@@ -135,7 +135,17 @@ def update24HoursInDataBase(minHourValue, maxHourValue, predictedHourValue, beac
 
 
 def TimeSeriesAlogrithm(aBeachName, beachInfo):
+    dayResults = getBeachHoursFinalResults(mFirebaseData, beachInfo)
+    print(dayResults);
     BeachData = pd.read_csv(Constants.DownloadFilesPath + aBeachName + Constants.csvFormat)
+    # Set last day results
+    len = BeachData.__len__()
+    for i in range(0, dayResults.__len__()):
+        if (dayResults[i] > 0):
+            print(BeachData['y'][len - 24 + i])
+            BeachData['y'][len - 24 + i] = dayResults[i]
+            print(BeachData['y'][len - 24 + i])
+    #
     BeachData['y'] = np.log(BeachData['y'])
     ProphetAlgorithm = Prophet(daily_seasonality=True, yearly_seasonality=False, weekly_seasonality=False);
     ProphetAlgorithm.fit(BeachData)
@@ -215,6 +225,17 @@ def readBeachesFromFirebase(mFirebaseData):
         uploadBeachFileToCloud(storage, filePath, beachName)
 
 
+def getBeachHoursFinalResults(mFirebaseData, beachInfo):
+    i = 0;
+    dayResults = [0] * 24
+    for i in range(0, 24):
+        dayResults[i] = mFirebaseData.child(Constants.Beaches).child(beachInfo.mBeachId).child(Constants.Hours).child(
+            i).child(Constants.CurrentEstimation).get()
+        dayResults[i] = round(dayResults[i].val(), 0);
+        print(dayResults[i])
+    return dayResults;
+
+
 config = {
     "apiKey": "apiKey",
     "authDomain": Constants.FireBaseUrl,
@@ -227,11 +248,8 @@ mFirebaseData = firebase.database()
 BeachListenerStream = mFirebaseData.child(Constants.BeachesListener).stream(
     BeachListenerHandler,
     stream_id="beach count")
-
 # readBeachesFromFirebase(mFirebaseData)
 schech = BlockingScheduler();
-# readBeachesFromFirebase(mFirebaseData)
-
 
 
 @schech.scheduled_job('interval', minutes=10)
@@ -240,9 +258,23 @@ def DeleteTimeStamps():
     ReadTimestamps()
 
 
-@schech.scheduled_job('cron', day_of_week='mon-sun', hour=23 ,minute=00)
+@schech.scheduled_job('cron', day_of_week='mon-sun', hour=21, minute=50)
 def scheduled_job(mFirebaseData=mFirebaseData):
     readBeachesFromFirebase(mFirebaseData)
+
+
+@schech.scheduled_job('interval', hours=1)
+def UpdateHourChart(mFirebaseData=mFirebaseData):
+    print("updating current estimation")
+    currentHour = datetime.datetime.utcnow().hour;
+    beaches = mFirebaseData.child(Constants.Beaches).get();
+    for beach in beaches.each():
+        beachId = beach.key();
+        result = mFirebaseData.child(Constants.Beaches).child(beachId).child(Constants.Result).get();
+        result = result.val()
+        print(result)
+        mFirebaseData.child(Constants.Beaches).child(beachId).child(Constants.Hours).child(currentHour - 1).child(
+            Constants.CurrentEstimation).set(result)
 
 
 schech.start()
