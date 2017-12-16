@@ -11,8 +11,8 @@ from BeachListener import BeachListener
 from Timestamp import Timestamp
 import time
 from apscheduler.schedulers.blocking import BlockingScheduler
+
 import threading
-from multiprocessing import Process
 
 global mFirebaseData
 
@@ -48,7 +48,7 @@ def calculateNewEstimation(aBeach, aPrediction, aCurrentDevicesOnBeach, aBeachCa
         if (int(aCurrentDevicesOnBeach) < int(aPrediction.getCurrentEstimation())):
             newResultValue = (int(aCurrentDevicesOnBeach)) + int(aPrediction.getCurrentEstimation());
             newResultValue = newResultValue / 2 * 1.5
-            #resultPath = Constants.Beaches + "/" + aBeach.BeachID + "/" + Constants.Result
+            # resultPath = Constants.Beaches + "/" + aBeach.BeachID + "/" + Constants.Result
             # mFirebaseData.child(resultPath).set(
             #     int(round(newResultValue)))
             currentDevicesPath = Constants.Beaches + "/" + aBeach.BeachID + "/" + Constants.CurrentDevices
@@ -148,46 +148,44 @@ def TimeSeriesAlogrithm(aBeachName, beachInfo):
 def ReadTimestamps():
     mTimestamp = Timestamp()
     UsersTimestamps = mFirebaseData.child(Constants.Timestamps).get();
-    print("running")
-    if (UsersTimestamps.each() is not None):
-        for timestamp in UsersTimestamps.each():
-            userId = timestamp.key();
-            mTimestamp.setUserId(userId)
-            print(userId);
-            details = mFirebaseData.child(Constants.Timestamps).child(userId).get()
-            details = timestamp.val();
-            details = dict(details)
-            mTimestamp.setTimestamp(details.get(Constants.Timestamp_Timestamp))
-            mTimestamp.setBeachName(details.get(Constants.Timestamp_BeachName))
-            mTimestamp.setBeachId(details.get(Constants.Timestamp_BeachID))
-            mTimestamp.setBeachListenerId(details.get(Constants.Timestamp_BeachListenerId))
-            mTimestamp.setBeachCountry(details.get(Constants.Timestamp_Country))
-            mTimestamp.print()
-            checkInHour = datetime.datetime.utcfromtimestamp(int(mTimestamp.Timestamp)).hour
-            checkInMinutes = int(datetime.datetime.fromtimestamp(int(mTimestamp.Timestamp)).minute)
-            print(checkInMinutes)
-            print(checkInHour)
-            currentHour = datetime.datetime.utcnow().hour;
-            currentMinute = datetime.datetime.utcnow().minute;
-            print(currentHour)
-            print(currentMinute)
-            if ((checkInHour + Constants.Timestamp_Max_Hour) > currentHour):
-                mFirebaseData.child(Constants.Timestamps).child(mTimestamp.UserID).remove()
-                mFirebaseData.child(Constants.Beaches).child(
-                    mTimestamp.BeachID).child(Constants.Peoplelist).child(mTimestamp.UserID).remove();
-                mFirebaseData.child(Constants.Users).child(mTimestamp.UserID).child(Constants.CurrentBeach).remove()
-                CurrentDevices = mFirebaseData.child(Constants.BeachesListener).child(mTimestamp.BeachListenerID).child(
-                    Constants.CurrentDevices).get()
-                CurrentDevices = int(CurrentDevices.val());
-                CurrentDevices = CurrentDevices - 1;
-                mFirebaseData.child(Constants.BeachesListener).child(
-                    mTimestamp.BeachListenerID).child(Constants.CurrentDevices).set(CurrentDevices)
-
-
-def runOnThread():
-    while (True):
-        ReadTimestamps()
-        time.sleep(INTERVAL)
+    print("Deleting relevant timestamps..")
+    if (UsersTimestamps is not None):
+        if (UsersTimestamps.each() is not None):
+            for timestamp in UsersTimestamps.each():
+                userId = timestamp.key();
+                mTimestamp.setUserId(userId)
+                print(userId);
+                details = mFirebaseData.child(Constants.Timestamps).child(userId).get()
+                details = timestamp.val();
+                details = dict(details)
+                mTimestamp.setTimestamp(details.get(Constants.Timestamp_Timestamp))
+                mTimestamp.setBeachName(details.get(Constants.Timestamp_BeachName))
+                mTimestamp.setBeachId(details.get(Constants.Timestamp_BeachID))
+                mTimestamp.setBeachListenerId(details.get(Constants.Timestamp_BeachListenerId))
+                mTimestamp.setBeachCountry(details.get(Constants.Timestamp_Country))
+                mTimestamp.print()
+                checkInHour = datetime.datetime.utcfromtimestamp(int(mTimestamp.Timestamp)).hour
+                checkInMinutes = int(datetime.datetime.fromtimestamp(int(mTimestamp.Timestamp)).minute)
+                print(checkInMinutes)
+                print(checkInHour)
+                currentHour = datetime.datetime.utcnow().hour;
+                currentMinute = datetime.datetime.utcnow().minute;
+                print(currentHour)
+                print(currentMinute)
+                if ((checkInHour + Constants.Timestamp_Max_Hour) < currentHour):
+                    mFirebaseData.child(Constants.Timestamps).child(mTimestamp.UserID).remove()
+                    mFirebaseData.child(Constants.Beaches).child(
+                        mTimestamp.BeachID).child(Constants.Peoplelist).child(mTimestamp.UserID).remove();
+                    mFirebaseData.child(Constants.Users).child(mTimestamp.UserID).child(Constants.CurrentBeach).remove()
+                    CurrentDevices = mFirebaseData.child(Constants.BeachesListener).child(
+                        mTimestamp.BeachListenerID).child(
+                        Constants.CurrentDevices).get()
+                    CurrentDevices = int(CurrentDevices.val());
+                    CurrentDevices = CurrentDevices - 1;
+                    mFirebaseData.child(Constants.BeachesListener).child(
+                        mTimestamp.BeachListenerID).child(Constants.CurrentDevices).set(CurrentDevices)
+                else:
+                    print("Not deleteing from timestamps")
 
 
 def readBeachesFromFirebase(mFirebaseData):
@@ -229,60 +227,22 @@ mFirebaseData = firebase.database()
 BeachListenerStream = mFirebaseData.child(Constants.BeachesListener).stream(
     BeachListenerHandler,
     stream_id="beach count")
-#readBeachesFromFirebase(mFirebaseData)
-#schech = BlockingScheduler();
 
-
-# while (True):
-
-# while (True):
-#     ReadTimestamps()
-#     time.sleep(INTERVAL)
-# t = threading.Thread(target=runOnThread())
-# t2 = threading.Thread(target=readBeachesFromFirebase(mFirebaseData))
-
-# p1 = Process(target=runOnThread())
-# p1.start()
-# p2 = Process(target=readBeachesFromFirebase(mFirebaseData))
-# p2.start()
+# readBeachesFromFirebase(mFirebaseData)
+schech = BlockingScheduler();
 # readBeachesFromFirebase(mFirebaseData)
 
 
-# thread.append(t)
-# thread.append(t2)
-# #t.start()
-# t2.start()
+
+@schech.scheduled_job('interval', minutes=10)
+def DeleteTimeStamps():
+    print("Checking timestamps..")
+    ReadTimestamps()
 
 
-@schech.scheduled_job('cron', day_of_week='mon-sat', hour=2)
+@schech.scheduled_job('cron', day_of_week='mon-sun', hour=23 ,minute=00)
 def scheduled_job(mFirebaseData=mFirebaseData):
-    # print('This job is run every weekday at 5pm.')
-    beachesFiles = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).get();
-    for beach in beachesFiles.each():
-        mBeachId = beach.key();
-        # print(beach.val())
-        beachName = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(mBeachId).child(
-            Constants.BeachName).get()
-        beachName = beachName.val();
-        filePath = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(mBeachId).child(
-            'filePath').get()
-        filePath = filePath.val()
-        print(filePath)
-        # mBeachId = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(beach.key()).child(
-        #     Constants.BeachID).get()
-        # mBeachId = mBeachId.val();
-        print(mBeachId)
-        mCountry = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(mBeachId).child(
-            Constants.Country).get()
-        mCountry = mCountry.val();
-        print(mCountry)
-        storage = firebase.storage();
-        if (beachName != "Ofir"):
-            beachFile = storage.child(filePath + "/" + beachName + Constants.csvFormat).download(
-                Constants.DownloadFilesPath + beachName + Constants.csvFormat);
-            mFirebaseData = mFirebaseData
-            TimeSeriesAlogrithm(beachFile, beachName, mBeachId, mCountry)
-            uploadBeachFileToCloud(storage, filePath, beachName)
+    readBeachesFromFirebase(mFirebaseData)
 
 
 schech.start()
