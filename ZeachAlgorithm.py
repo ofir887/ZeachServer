@@ -15,6 +15,31 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 import threading
 
 global mFirebaseData
+mAccurateFeedbackCount = 0
+mEasyToUseFeebackCount = 0
+mRating = 0
+mNumberOfFeedBacks = 0
+
+
+def increaseAccurateFeedback():
+    global mAccurateFeedbackCount
+    mAccurateFeedbackCount = mAccurateFeedbackCount + 1
+    print("accurate: ", mAccurateFeedbackCount)
+
+def increaseEasyToUseFeedback():
+    global mEasyToUseFeebackCount
+    mEasyToUseFeebackCount = mEasyToUseFeebackCount + 1
+    print("easy to use: ", mEasyToUseFeebackCount)
+
+
+def increaseRatingFeedback(rating):
+    global mRating
+    mRating = mRating + rating
+    print("rating: ", mRating)
+
+
+def setNumberOfFeedBacks(aCount):
+    mNumberOfFeedBacks = aCount
 
 
 class Info(object):
@@ -81,6 +106,39 @@ def BeachListenerHandler(message):
         prediction = CurrentHourPrediction(mFirebaseData, hourPath)
         prediction.print();
         calculateNewEstimation(beach, prediction, onBeachDevicesCountByGps, beachCapacity)
+
+
+def FeedbackListenerHandler(message):
+    print(message)
+    paths = str(message['path'])
+    paths = paths.split('/')
+    print(paths)
+    if (paths.__len__() > 2):
+        if (paths[2] == 'Accurate'):
+            accurate = message['data']
+            if (accurate == True):
+                increaseAccurateFeedback()
+        if (paths[2] == 'EasyToUse'):
+            easyToUse = message['data']
+            if (easyToUse == True):
+                increaseEasyToUseFeedback()
+        if (paths[2] == 'Rating'):
+            rating = message['data']
+            increaseRatingFeedback(rating)
+    numberOfFeedbacks = mFirebaseData.child('Feedback').get().val()
+    if (numberOfFeedbacks != None):
+        setNumberOfFeedBacks(len(numberOfFeedbacks))
+        calculateAppFeedbackResults()
+
+
+def calculateAppFeedbackResults():
+    if (mNumberOfFeedBacks > 0):
+        if (mAccurateFeedbackCount != 0):
+            print("Accurate: ", mAccurateFeedbackCount / mNumberOfFeedBacks)
+        if (mEasyToUseFeebackCount != 0):
+            print("Easy To Use: ", mEasyToUseFeebackCount / mNumberOfFeedBacks)
+        if (mRating != 0):
+            print("Rating: ", mRating / mNumberOfFeedBacks)
 
 
 def uploadBeachFileToCloud(aFirebaseStorage, aFilePath, aBeachName):
@@ -248,6 +306,8 @@ mFirebaseData = firebase.database()
 BeachListenerStream = mFirebaseData.child(Constants.BeachesListener).stream(
     BeachListenerHandler,
     stream_id="beach count")
+FeedbackListener = mFirebaseData.child("Feedback").\
+    stream(FeedbackListenerHandler, stream_id="feedback_listener")
 # readBeachesFromFirebase(mFirebaseData)
 schech = BlockingScheduler();
 
