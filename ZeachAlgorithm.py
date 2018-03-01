@@ -26,6 +26,7 @@ def increaseAccurateFeedback():
     mAccurateFeedbackCount = mAccurateFeedbackCount + 1
     print("accurate: ", mAccurateFeedbackCount)
 
+
 def increaseEasyToUseFeedback():
     global mEasyToUseFeebackCount
     mEasyToUseFeebackCount = mEasyToUseFeebackCount + 1
@@ -34,12 +35,14 @@ def increaseEasyToUseFeedback():
 
 def increaseRatingFeedback(rating):
     global mRating
-    mRating = mRating + rating
+    mRating = mRating + (rating * 20)
     print("rating: ", mRating)
 
 
 def setNumberOfFeedBacks(aCount):
+    global mNumberOfFeedBacks;
     mNumberOfFeedBacks = aCount
+    print("Number of feedbacks: " + str(mNumberOfFeedBacks))
 
 
 class Info(object):
@@ -114,31 +117,33 @@ def FeedbackListenerHandler(message):
     paths = paths.split('/')
     print(paths)
     if (paths.__len__() > 2):
-        if (paths[2] == 'Accurate'):
+        if (paths[2] == Constants.FeedBack_Accurate):
             accurate = message['data']
             if (accurate == True):
                 increaseAccurateFeedback()
-        if (paths[2] == 'EasyToUse'):
+        if (paths[2] == Constants.FeedBack_Easy_To_Use):
             easyToUse = message['data']
             if (easyToUse == True):
                 increaseEasyToUseFeedback()
-        if (paths[2] == 'Rating'):
+        if (paths[2] == Constants.FeedBack_Rating):
             rating = message['data']
             increaseRatingFeedback(rating)
-    numberOfFeedbacks = mFirebaseData.child('Feedback').get().val()
+    numberOfFeedbacks = mFirebaseData.child(Constants.FeedBack).get().val()
     if (numberOfFeedbacks != None):
         setNumberOfFeedBacks(len(numberOfFeedbacks))
         calculateAppFeedbackResults()
+        showTotalFeedbackScore()
 
 
 def calculateAppFeedbackResults():
     if (mNumberOfFeedBacks > 0):
         if (mAccurateFeedbackCount != 0):
-            print("Accurate: ", mAccurateFeedbackCount / mNumberOfFeedBacks)
+            print("Accurate: ", ((mAccurateFeedbackCount / mNumberOfFeedBacks) * 100), "%")
         if (mEasyToUseFeebackCount != 0):
-            print("Easy To Use: ", mEasyToUseFeebackCount / mNumberOfFeedBacks)
+            print("Easy To Use: ", ((mEasyToUseFeebackCount / mNumberOfFeedBacks) * 100), "%")
         if (mRating != 0):
-            print("Rating: ", mRating / mNumberOfFeedBacks)
+            print("Rating: ", (mRating / mNumberOfFeedBacks), "%")
+        showTotalFeedbackScore()
 
 
 def uploadBeachFileToCloud(aFirebaseStorage, aFilePath, aBeachName):
@@ -213,6 +218,31 @@ def TimeSeriesAlogrithm(aBeachName, beachInfo):
     savePredictionToFile(Forecast, aBeachName, beachInfo)
 
 
+def ReadFeedbacks():
+    feedbacks = mFirebaseData.child(Constants.FeedBack).get();
+    if (feedbacks.val() is not None):
+        print("Reading feedbacks...")
+        for feedback in feedbacks.each():
+            userId = feedback.key();
+            details = mFirebaseData.child(Constants.FeedBack).child(userId).get()
+            details = details.val()
+            details = dict(details)
+            print(details)
+            if (details.get(Constants.FeedBack_Accurate) == True):
+                increaseAccurateFeedback()
+            if (details.get(Constants.FeedBack_Easy_To_Use) == True):
+                increaseEasyToUseFeedback()
+            increaseRatingFeedback(details.get(Constants.FeedBack_Rating))
+        length = len(feedbacks.val())
+        setNumberOfFeedBacks(length)
+        showTotalFeedbackScore()
+
+
+def showTotalFeedbackScore():
+    totalAstimation = ((mAccurateFeedbackCount + mEasyToUseFeebackCount + (mRating / 100)) / 3) * 100
+    print("Updated feedbacks score: ", totalAstimation, "%")
+
+
 def ReadTimestamps():
     mTimestamp = Timestamp()
     UsersTimestamps = mFirebaseData.child(Constants.Timestamps).get();
@@ -265,7 +295,7 @@ def readBeachesFromFirebase(mFirebaseData):
             Constants.BeachName).get()
         beachName = beachName.val();
         filePath = mFirebaseData.child(Constants.Files + Constants.BeachesFiles).child(mBeachId).child(
-            'filePath').get()
+            Constants.FilePath).get()
         filePath = filePath.val()
         print(filePath)
         print(mBeachId)
@@ -275,7 +305,6 @@ def readBeachesFromFirebase(mFirebaseData):
         beachInfo = Info(mBeachId, mCountry);
         print(mCountry)
         storage = firebase.storage();
-        #   if (beachName != "Ofir"):
         beachFile = storage.child(filePath + "/" + beachName + Constants.csvFormat).download(
             Constants.DownloadFilesPath + beachName + Constants.csvFormat);
         mFirebaseData = mFirebaseData
@@ -306,9 +335,10 @@ mFirebaseData = firebase.database()
 BeachListenerStream = mFirebaseData.child(Constants.BeachesListener).stream(
     BeachListenerHandler,
     stream_id="beach count")
-FeedbackListener = mFirebaseData.child("Feedback").\
+FeedbackListener = mFirebaseData.child(Constants.FeedBack). \
     stream(FeedbackListenerHandler, stream_id="feedback_listener")
 # readBeachesFromFirebase(mFirebaseData)
+ReadFeedbacks()
 schech = BlockingScheduler();
 
 
