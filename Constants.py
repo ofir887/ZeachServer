@@ -1,4 +1,5 @@
 BeachesListener = "BeachesListener";
+BeachListenerID = 'BeachListenerID'
 Country = "Country"
 Hours = "Hours"
 Beaches = "Beaches"
