@@ -28,35 +28,27 @@ firebase = pyrebase.initialize_app(config)
 data = firebase.database()
 
 beachCoords = []
-beachCoords.append(Coords(32.146056, 34.791982))
-beachCoords.append(Coords(32.146065, 34.971623))
-beachCoords.append(Coords(32.143527, 37.971358))
-beachCoords.append(Coords(32.143518, 34.790861))
+beachCoords.append(Coords(32.110089, 34.792957))
+beachCoords.append(Coords(32.129280, 34.804115))
+beachCoords.append(Coords(32.135385, 34.881706))
+beachCoords.append(Coords(32.017208, 34.981923))
 
-beachCoords2 = []
-beachCoords2.append(Coords(32.110089, 34.792957))
-beachCoords2.append(Coords(32.129280, 34.804115))
-beachCoords2.append(Coords(32.135385, 34.881706))
-beachCoords2.append(Coords(32.017208, 34.981923))
-beachFormattedCoords2 = setCoordsAsDictionary(beachCoords2)
-
-beachFormattedCoords = setCoordsAsDictionary(beachCoords2)
+beachFormattedCoords = setCoordsAsDictionary(beachCoords)
 print(beachFormattedCoords)
 
 #
 storage = firebase.storage()
 Country = "Israel";
 City = "Tel Aviv";
-BeachName = "OfirM";
+BeachName = "NirM";
+Capacity = 1000
 csvFileName = BeachName + ".csv";
 xlsxFileName = BeachName + ".xlsx";
 #
 
-BeachCoords = Beach(BeachName, beachFormattedCoords, 'Israel', 1000);
+BeachCoords = Beach(BeachName, beachFormattedCoords, Country, Capacity);
 
-# BeachCoords.printBeach(BeachCoords)
 hours = Hours()
-# BeachCoords.hours.setHourPeople(4, 500)
 BeachID = data.child(Constants.Beaches).push(BeachCoords.dump())
 BeachListenerID = data.child(Constants.BeachesListener).push(
     BeachCoords.beachListenerDump(BeachID['name']))
