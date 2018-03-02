@@ -19,6 +19,28 @@ mAccurateFeedbackCount = 0
 mEasyToUseFeebackCount = 0
 mRating = 0
 mNumberOfFeedBacks = 0
+mNumberOfTests = 0;
+mSuccessTest = 0;
+mFailedTests = 0;
+
+
+def updateNumberOfTests():
+    global mNumberOfTests;
+    mNumberOfTests = mNumberOfTests + 1
+    successPrecentage = (mSuccessTest / mNumberOfTests) * 100
+    failurePrecentage = (mFailedTests / mNumberOfTests) * 100
+    print("% of success:", successPrecentage)
+    print("% of failure:", failurePrecentage)
+
+
+def updateSuccessTests():
+    global mSuccessTest
+    mSuccessTest = mSuccessTest + 1;
+
+
+def updateFailedTests():
+    global mFailedTests
+    mFailedTests = mFailedTests + 1;
 
 
 def increaseAccurateFeedback():
@@ -64,6 +86,19 @@ def setTrafficFlag(aBeachCapacity, aResult):
         return Constants.LowTraffic
 
 
+def checkForDeviation(aCurrentDevices, aResult):
+    deviation = aResult / aCurrentDevices;
+    deviation = abs(1 - deviation)
+    print("Deviation: ", deviation)
+    if (deviation >= 0 and deviation <= 0.2):
+        print("Success !")
+        updateSuccessTests()
+    else:
+        print("Failure")
+        updateFailedTests()
+    updateNumberOfTests()
+
+
 def updateHourPrediction(aCurrentEstimation, aMinEstimation, aMaxEstimation, aHourPath):
     print("Updating hour chart...")
     mFirebaseData.child(aHourPath).child(Constants.MinEstimation).set(aMinEstimation)
@@ -107,6 +142,7 @@ def calculateNewEstimation(aBeach, aPrediction, aCurrentDevicesOnBeach, aBeachCa
     trafficFlag = setTrafficFlag(aBeachCapacity, result)
     mFirebaseData.child(
         Constants.Beaches + "/" + aBeach.BeachID + "/" + Constants.Traffic).set(trafficFlag)
+    checkForDeviation(aCurrentDevicesOnBeach, result)
     return result;
 
 
