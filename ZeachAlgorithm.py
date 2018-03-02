@@ -85,7 +85,6 @@ def setTrafficFlag(aBeachCapacity, aResult):
     else:
         return Constants.LowTraffic
 
-
 def checkForDeviation(aCurrentDevices, aResult):
     deviation = aResult / aCurrentDevices;
     deviation = abs(1 - deviation)
