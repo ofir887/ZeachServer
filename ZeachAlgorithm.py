@@ -9,10 +9,10 @@ from Hours import Hours
 from Hours import CurrentHourPrediction
 from BeachListener import BeachListener
 from Timestamp import Timestamp
-import time
 from apscheduler.schedulers.blocking import BlockingScheduler
 
-import threading
+INTERVAL = 60;
+COUNT_FIX = 1.1
 
 global mFirebaseData
 mAccurateFeedbackCount = 0
@@ -54,9 +54,6 @@ class Info(object):
         self.mCountry = country
 
 
-INTERVAL = 60;
-
-
 def setTrafficFlag(aBeachCapacity, aResult):
     percentage = (aResult / aBeachCapacity) * 100;
     if (percentage >= 80):
@@ -67,28 +64,50 @@ def setTrafficFlag(aBeachCapacity, aResult):
         return Constants.LowTraffic
 
 
-# TODO fix calculations & push new 24 hours values to csv file
-def calculateNewEstimation(aBeach, aPrediction, aCurrentDevicesOnBeach, aBeachCapacity):
-    newResultValue = 0;
-    if (int(aCurrentDevicesOnBeach) > int(aPrediction.getCurrentEstimation())):
-        newResultValue = (int(aCurrentDevicesOnBeach)) * 1.05;
-    else:
-        if (int(aCurrentDevicesOnBeach) < int(aPrediction.getCurrentEstimation())):
-            newResultValue = (int(aCurrentDevicesOnBeach)) + int(aPrediction.getCurrentEstimation());
-            newResultValue = newResultValue / 2 * 1.5
-            # resultPath = Constants.Beaches + "/" + aBeach.BeachID + "/" + Constants.Result
-            # mFirebaseData.child(resultPath).set(
-            #     int(round(newResultValue)))
-            currentDevicesPath = Constants.Beaches + "/" + aBeach.BeachID + "/" + Constants.CurrentDevices
-            mFirebaseData.child(currentDevicesPath).set(int(round(aCurrentDevicesOnBeach)))
+def updateHourPrediction(aCurrentEstimation, aMinEstimation, aMaxEstimation, aHourPath):
+    print("Updating hour chart...")
+    mFirebaseData.child(aHourPath).child(Constants.MinEstimation).set(aMinEstimation)
+    mFirebaseData.child(aHourPath).child(Constants.CurrentEstimation).set(aCurrentEstimation)
+    mFirebaseData.child(aHourPath).child(Constants.MaxEstimation).set(aMaxEstimation)
+
+
+def calculateNewEstimation(aBeach, aPrediction, aCurrentDevicesOnBeach, aBeachCapacity, aHourPath):
+    fixedValue = (int(aCurrentDevicesOnBeach)) * COUNT_FIX;
+    currentEstimation = (int(aPrediction.CurrentEstimation))
+    maxEstimation = (int(aPrediction.MaxEstimation))
+    minEstimation = (int(aPrediction.MinEstimation))
+    print("Current people after fix: ", fixedValue)
+    # case 1: in range between current and max
+    if (fixedValue >= currentEstimation and fixedValue <= maxEstimation):
+        print("fixing according to case 1")
+        result = (fixedValue + currentEstimation) / 2
+        currentEstimation = result
+    # case 2: in range between current and min
+    if (fixedValue < currentEstimation and fixedValue >= minEstimation):
+        print("fixing according to case 2")
+        result = (fixedValue + currentEstimation) / 2
+        currentEstimation = result
+    # case 3: higher than max estimation - Do average and set as current & update max estimation
+    if (fixedValue > maxEstimation):
+        print("fixing according to case 3")
+        result = (fixedValue + maxEstimation) / 2
+        currentEstimation = result
+        maxEstimation = fixedValue
+    # case 4: lowwer than min estimation - Do average and set as current & update min estimation
+    if (fixedValue < minEstimation):
+        print("fixing according to case 4")
+        result = (fixedValue + minEstimation) / 2
+        currentEstimation = result
+        minEstimation = fixedValue
+    updateHourPrediction(currentEstimation, minEstimation, maxEstimation, aHourPath)
     # set traffic flag
     resultPath = Constants.Beaches + "/" + aBeach.BeachID + "/" + Constants.Result
     mFirebaseData.child(resultPath).set(
-        int(round(newResultValue)))
-    trafficFlag = setTrafficFlag(aBeachCapacity, newResultValue)
+        int(round(result)))
+    trafficFlag = setTrafficFlag(aBeachCapacity, result)
     mFirebaseData.child(
         Constants.Beaches + "/" + aBeach.BeachID + "/" + Constants.Traffic).set(trafficFlag)
-    return newResultValue;
+    return result;
 
 
 def BeachListenerHandler(message):
@@ -104,11 +123,13 @@ def BeachListenerHandler(message):
         beach.setBeachID(beachId)
         beach.print()
         onBeachDevicesCountByGps = beach.CurrentDevicesCount;
+        currentDevicesPath = Constants.Beaches + "/" + beach.BeachID + "/" + Constants.CurrentDevices
+        mFirebaseData.child(currentDevicesPath).set(int(round(onBeachDevicesCountByGps)))
         CurrentHour = datetime.datetime.now().hour;
         hourPath = Constants.Beaches + "/" + beach.BeachID + "/" + Constants.Hours + "/" + CurrentHour.__str__()
         prediction = CurrentHourPrediction(mFirebaseData, hourPath)
         prediction.print();
-        calculateNewEstimation(beach, prediction, onBeachDevicesCountByGps, beachCapacity)
+        calculateNewEstimation(beach, prediction, onBeachDevicesCountByGps, beachCapacity, hourPath)
 
 
 def FeedbackListenerHandler(message):
