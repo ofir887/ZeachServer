@@ -409,7 +409,7 @@ def DeleteTimeStamps():
     ReadTimestamps()
 
 
-@schech.scheduled_job('cron', day_of_week='mon-sun', hour=22, minute=6)
+@schech.scheduled_job('cron', day_of_week='mon-sun', hour=22, minute=0)
 def scheduled_job(mFirebaseData=mFirebaseData):
     readBeachesFromFirebase(mFirebaseData)
 
