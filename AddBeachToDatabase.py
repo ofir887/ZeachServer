@@ -58,9 +58,9 @@ data.child(Constants.Beaches + "/" + BeachID['name']).child(Constants.BeachID).s
 
 # Add to storage
 storage.child(Constants.Beaches).child(Country).child(City).child(BeachName).child(csvFileName).put(
-    "/Users/ofirmonis/PycharmProjects/firebaseStream/template.csv")
+    "C:/Users/Ofir-M\PycharmProjects/firebaseStream/template.csv")
 storage.child(Constants.Beaches).child(Country).child(City).child(BeachName).child(xlsxFileName).put(
-    "/Users/ofirmonis/PycharmProjects/firebaseStream/template.xlsx")
+    "C:/Users/Ofir-M\PycharmProjects/firebaseStream/template.xlsx")
 data.child(Constants.Files).child(Constants.BeachesFiles).child(BeachID['name']).child(Constants.FilePath).set(
     Constants.Beaches + "/" + Country + "/" + City + "/" + BeachName);
 data.child(Constants.Files).child(Constants.BeachesFiles).child(BeachID['name']).child(Constants.BeachID).set(

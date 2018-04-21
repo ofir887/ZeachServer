@@ -3,6 +3,7 @@ from fbprophet import Prophet
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 import datetime
 import Constants
 from Hours import Hours
@@ -85,6 +86,7 @@ def setTrafficFlag(aBeachCapacity, aResult):
     else:
         return Constants.LowTraffic
 
+
 def checkForDeviation(aCurrentDevices, aResult):
     deviation = aResult / aCurrentDevices;
     deviation = abs(1 - deviation)
@@ -139,6 +141,7 @@ def calculateNewEstimation(aBeach, aPrediction, aCurrentDevicesOnBeach, aBeachCa
     mFirebaseData.child(resultPath).set(
         int(round(result)))
     trafficFlag = setTrafficFlag(aBeachCapacity, result)
+    print(trafficFlag)
     mFirebaseData.child(
         Constants.Beaches + "/" + aBeach.BeachID + "/" + Constants.Traffic).set(trafficFlag)
     checkForDeviation(aCurrentDevicesOnBeach, result)
@@ -188,7 +191,6 @@ def FeedbackListenerHandler(message):
     if (numberOfFeedbacks != None):
         setNumberOfFeedBacks(len(numberOfFeedbacks))
         calculateAppFeedbackResults()
-        showTotalFeedbackScore()
 
 
 def calculateAppFeedbackResults():
@@ -199,7 +201,6 @@ def calculateAppFeedbackResults():
             print("Easy To Use: ", ((mEasyToUseFeebackCount / mNumberOfFeedBacks) * 100), "%")
         if (mRating != 0):
             print("Rating: ", (mRating / mNumberOfFeedBacks), "%")
-        showTotalFeedbackScore()
 
 
 def uploadBeachFileToCloud(aFirebaseStorage, aFilePath, aBeachName):
@@ -291,12 +292,9 @@ def ReadFeedbacks():
             increaseRatingFeedback(details.get(Constants.FeedBack_Rating))
         length = len(feedbacks.val())
         setNumberOfFeedBacks(length)
-        showTotalFeedbackScore()
 
 
-def showTotalFeedbackScore():
-    totalAstimation = ((mAccurateFeedbackCount + mEasyToUseFeebackCount + (mRating / 100)) / 3) * 100
-    print("Updated feedbacks score: ", totalAstimation, "%")
+
 
 
 def ReadTimestamps():
@@ -318,15 +316,24 @@ def ReadTimestamps():
                 mTimestamp.setBeachListenerId(details.get(Constants.Timestamp_BeachListenerId))
                 mTimestamp.setBeachCountry(details.get(Constants.Timestamp_Country))
                 mTimestamp.print()
+                date = datetime.datetime.utcfromtimestamp(int(mTimestamp.Timestamp))
+                dayOfMonth = date.day;
+                month = date.month;
+                currentDayOfMonth = datetime.datetime.utcnow().day;
+                currentMonth = datetime.datetime.utcnow().month
+                print("received date: month: " + str(month) + " day " + str(dayOfMonth))
+                print("current date: month: " + str(currentMonth) + " day " + str(currentDayOfMonth))
                 checkInHour = datetime.datetime.utcfromtimestamp(int(mTimestamp.Timestamp)).hour
                 checkInMinutes = int(datetime.datetime.fromtimestamp(int(mTimestamp.Timestamp)).minute)
-                print(checkInMinutes)
-                print(checkInHour)
+                print("check in minutes: "+ str(checkInMinutes))
+                print("check in hour: "+ str(checkInHour))
                 currentHour = datetime.datetime.utcnow().hour;
                 currentMinute = datetime.datetime.utcnow().minute;
-                print(currentHour)
-                print(currentMinute)
-                if ((checkInHour + Constants.Timestamp_Max_Hour) < currentHour):
+                print("current hour : "+ str(currentHour))
+                print("current minute: "+ str(currentMinute))
+                if ((checkInHour + Constants.Timestamp_Max_Hour) < currentHour or (currentMonth > month) or (
+                            currentDayOfMonth > dayOfMonth)):
+                    print("deleting timestamp...")
                     mFirebaseData.child(Constants.Timestamps).child(mTimestamp.UserID).remove()
                     mFirebaseData.child(Constants.Beaches).child(
                         mTimestamp.BeachID).child(Constants.Peoplelist).child(mTimestamp.UserID).remove();
@@ -366,6 +373,9 @@ def readBeachesFromFirebase(mFirebaseData):
         mFirebaseData = mFirebaseData
         TimeSeriesAlogrithm(beachName, beachInfo)
         uploadBeachFileToCloud(storage, filePath, beachName)
+        print("deleting beach files from server.")
+        os.remove(Constants.FilePath + beachName + Constants.xlsxFormat)
+        os.remove(Constants.FilePath + beachName + Constants.csvFormat)
 
 
 def getBeachHoursFinalResults(mFirebaseData, beachInfo):
@@ -393,7 +403,6 @@ BeachListenerStream = mFirebaseData.child(Constants.BeachesListener).stream(
     stream_id="beach count")
 FeedbackListener = mFirebaseData.child(Constants.FeedBack). \
     stream(FeedbackListenerHandler, stream_id="feedback_listener")
-# readBeachesFromFirebase(mFirebaseData)
 ReadFeedbacks()
 schech = BlockingScheduler();
 
@@ -404,7 +413,7 @@ def DeleteTimeStamps():
     ReadTimestamps()
 
 
-@schech.scheduled_job('cron', day_of_week='mon-sun', hour=22, minute=6)
+@schech.scheduled_job('cron', day_of_week='mon-sun', hour=22, minute=0)
 def scheduled_job(mFirebaseData=mFirebaseData):
     readBeachesFromFirebase(mFirebaseData)
 

@@ -29,7 +29,7 @@ FirebaseStorage = "zeach-ab079.appspot.com"
 Files = "Files/"
 BeachesFiles = "BeachesFiles"
 FilePath = 'filePath'
-DownloadFilesPath = "/Users/ofirmonis/PycharmProjects/firebaseStream/"
+DownloadFilesPath = "C:/Users/Ofir-M\PycharmProjects/firebaseStream/"
 csvFormat = ".csv"
 xlsxFormat = ".xlsx"
 
