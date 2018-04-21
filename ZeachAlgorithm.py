@@ -3,6 +3,7 @@ from fbprophet import Prophet
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 import datetime
 import Constants
 from Hours import Hours
@@ -372,6 +373,9 @@ def readBeachesFromFirebase(mFirebaseData):
         mFirebaseData = mFirebaseData
         TimeSeriesAlogrithm(beachName, beachInfo)
         uploadBeachFileToCloud(storage, filePath, beachName)
+        print("deleting beach files from server.")
+        os.remove(Constants.FilePath + beachName + Constants.xlsxFormat)
+        os.remove(Constants.FilePath + beachName + Constants.csvFormat)
 
 
 def getBeachHoursFinalResults(mFirebaseData, beachInfo):
