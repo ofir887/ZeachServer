@@ -48,7 +48,7 @@ Timestamp_Max_Hour = 3
 Timestamp_Country = 'country'
 
 #Feedback
-FeedBack = 'FeedBack'
+FeedBack = 'Feedback'
 FeedBack_Accurate = 'Accurate'
 FeedBack_Easy_To_Use = 'EasyToUse'
 FeedBack_Rating = 'Rating'
